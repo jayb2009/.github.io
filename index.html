@@ -3,69 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pan and Zoom Image</title>
+    <title>Illustration Panning with Map Overlay</title>
     <style>
-        #imageContainer {
-            width: 800px;
-            height: 600px;
-            overflow: hidden;
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        #container {
             position: relative;
-            border: 1px solid #ccc;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
         }
-        #panZoomImage {
+        .illustration {
             position: absolute;
-            top: 0;
-            left: 0;
-            max-width: none;
-            cursor: move;
+            width: 200%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.5s ease;
         }
+        #ill1 { background-image: url('https://raw.githubusercontent.com/jayb2009/.github.io/main/cso01.jpg'); }
+        #ill2 { background-image: url('https://raw.githubusercontent.com/jayb2009/.github.io/main/cso01.jpg'); left: 100%; }
+        #mapOverlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 255, 0.3);
+            clip-path: polygon(10% 10%, 90% 10%, 90% 90%, 10% 90%);
+        }
+        #welcome {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-size: 4em;
+            -webkit-text-stroke: 2px black;
+            text-stroke: 2px black;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        #sidebar {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-dot {
+            width: 10px;
+            height: 10px;
+            background: #ccc;
+            border-radius: 50%;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .nav-dot.active { background: #000; }
     </style>
 </head>
 <body>
-    <div id="imageContainer">
-        <img id="panZoomImage" src="https://raw.githubusercontent.com/jayb2009/.github.io/main/cso01.jpg" alt="Pan and Zoom Image">
+    <div id="container">
+        <div id="ill1" class="illustration"></div>
+        <div id="ill2" class="illustration"></div>
+        <div id="mapOverlay"></div>
+        <div id="welcome">Welcome</div>
+    </div>
+    <div id="sidebar">
+        <div class="nav-dot active" data-index="0"></div>
+        <div class="nav-dot" data-index="1"></div>
     </div>
 
     <script>
-        const container = document.getElementById('imageContainer');
-        const img = document.getElementById('panZoomImage');
-        let isDragging = false;
-        let startX, startY, initialX, initialY;
-        let scale = 1;
+        const illustrations = document.querySelectorAll('.illustration');
+        const navDots = document.querySelectorAll('.nav-dot');
+        const welcome = document.getElementById('welcome');
+        let currentIndex = 0;
 
-        container.addEventListener('wheel', (e) => {
+        function updateView() {
+            illustrations.forEach((ill, index) => {
+                ill.style.transform = `translateX(-${currentIndex * 100}%)`;
+                navDots.forEach(dot => dot.classList.remove('active'));
+                navDots[currentIndex].classList.add('active');
+                welcome.style.opacity = currentIndex === 0 ? 1 : 0;
+            });
+        }
+
+        document.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY * -0.01;
-            scale = Math.min(Math.max(0.1, scale + delta), 10);
-            img.style.transform = `scale(${scale})`;
-        });
-
-        container.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            initialX = parseFloat(img.style.left) || 0;
-            initialY = parseFloat(img.style.top) || 0;
-            img.style.transition = 'none';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-                img.style.left = `${initialX + dx}px`;
-                img.style.top = `${initialY + dy}px`;
+            if (e.deltaY > 0 && currentIndex < illustrations.length - 1) {
+                currentIndex++;
+            } else if (e.deltaY < 0 && currentIndex > 0) {
+                currentIndex--;
             }
+            updateView();
         });
 
-        document.addEventListener('mouseup', () => {
-            isDragging = false;
-            img.style.transition = 'all 0.2s ease';
-        });
-
-        document.addEventListener('mouseleave', () => {
-            isDragging = false;
-            img.style.transition = 'all 0.2s ease';
+        navDots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                currentIndex = parseInt(dot.getAttribute('data-index'));
+                updateView();
+            });
         });
     </script>
 </body>
